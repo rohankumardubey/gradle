@@ -39,8 +39,8 @@ public class DefaultVariantSelectorFactory implements VariantSelectorFactory {
     }
 
     @Override
-    public VariantSelector create(AttributeContainerInternal consumerAttributes, boolean allowNoMatchingVariants, boolean selectFromAllVariants, TransformUpstreamDependenciesResolverFactory dependenciesResolverFactory) {
-        return new AttributeMatchingVariantSelector(consumerProvidedVariantFinder, schema, attributesFactory, transformedVariantFactory, consumerAttributes.asImmutable(), allowNoMatchingVariants, selectFromAllVariants, dependenciesResolverFactory);
+    public VariantSelector create(AttributeContainerInternal consumerAttributes, boolean allowNoMatchingVariants, TransformUpstreamDependenciesResolverFactory dependenciesResolverFactory) {
+        return new AttributeMatchingVariantSelector(consumerProvidedVariantFinder, schema, attributesFactory, transformedVariantFactory, consumerAttributes.asImmutable(), allowNoMatchingVariants, dependenciesResolverFactory);
     }
 
 }

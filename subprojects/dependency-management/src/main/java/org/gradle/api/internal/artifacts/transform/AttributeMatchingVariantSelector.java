@@ -54,7 +54,6 @@ class AttributeMatchingVariantSelector implements VariantSelector {
     private final TransformedVariantFactory transformedVariantFactory;
     private final ImmutableAttributes requested;
     private final boolean ignoreWhenNoMatches;
-    private final boolean selectFromAllVariants;
     private final TransformUpstreamDependenciesResolverFactory dependenciesResolverFactory;
 
     AttributeMatchingVariantSelector(
@@ -64,7 +63,6 @@ class AttributeMatchingVariantSelector implements VariantSelector {
         TransformedVariantFactory transformedVariantFactory,
         ImmutableAttributes requested,
         boolean ignoreWhenNoMatches,
-        boolean selectFromAllVariants,
         TransformUpstreamDependenciesResolverFactory dependenciesResolverFactory
     ) {
         this.consumerProvidedVariantFinder = consumerProvidedVariantFinder;
@@ -73,7 +71,6 @@ class AttributeMatchingVariantSelector implements VariantSelector {
         this.transformedVariantFactory = transformedVariantFactory;
         this.requested = requested;
         this.ignoreWhenNoMatches = ignoreWhenNoMatches;
-        this.selectFromAllVariants = selectFromAllVariants;
         this.dependenciesResolverFactory = dependenciesResolverFactory;
     }
 
@@ -110,12 +107,7 @@ class AttributeMatchingVariantSelector implements VariantSelector {
     private ResolvedArtifactSet doSelect(ResolvedVariantSet producer, boolean ignoreWhenNoMatches, Factory factory, AttributeMatchingExplanationBuilder explanationBuilder) {
         AttributeMatcher matcher = schema.withProducer(producer.getSchema());
         ImmutableAttributes componentRequested = attributesFactory.concat(requested, producer.getOverriddenAttributes());
-        final List<ResolvedVariant> variants;
-        if (selectFromAllVariants) {
-            variants = ImmutableList.copyOf(producer.getAllVariants());
-        } else {
-            variants = ImmutableList.copyOf(producer.getVariants());
-        }
+        final List<ResolvedVariant> variants = ImmutableList.copyOf(producer.getVariants());
 
         List<? extends ResolvedVariant> matches = matcher.matches(variants, componentRequested, explanationBuilder);
         if (matches.size() == 1) {
