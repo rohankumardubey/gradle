@@ -43,6 +43,8 @@ dependencies {
     runtimeOnly(libs.commonsLang)
     runtimeOnly(libs.slf4jApi)
     runtimeOnly(project(":instrumentation-declarations"))
+    // See https://github.com/gradle/gradle/issues/25894
+    runtimeOnly(project(":test-kit"))
 
     manifestClasspath(project(":bootstrap"))
     manifestClasspath(project(":base-services"))
