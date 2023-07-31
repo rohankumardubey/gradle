@@ -16,6 +16,8 @@ dependencies {
     implementation(project(":code-quality"))
     implementation(project(":language-java"))
     implementation(project(":language-jvm"))
+    implementation(project(":plugins"))
+    implementation(project(":platform-jvm"))
     implementation(projects.war)
 
     // Instrumentation dependencies
