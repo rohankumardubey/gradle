@@ -38,6 +38,7 @@ import org.gradle.internal.component.AmbiguousConfigurationSelectionException;
 import org.gradle.internal.component.NoMatchingCapabilitiesException;
 import org.gradle.internal.component.NoMatchingConfigurationSelectionException;
 import org.gradle.internal.component.external.model.ModuleComponentArtifactMetadata;
+import org.gradle.internal.deprecation.DeprecationLogger;
 
 import javax.annotation.Nullable;
 import java.util.Collection;
@@ -158,7 +159,20 @@ public abstract class AttributeConfigurationSelector {
 
     private static VariantSelectionResult singleVariant(boolean variantAware, List<VariantGraphResolveState> matches) {
         assert matches.size() == 1;
-        return new VariantSelectionResult(ImmutableList.of(matches.get(0)), variantAware);
+
+        VariantGraphResolveState match = matches.get(0);
+        VariantGraphResolveMetadata matchMetadata = matches.get(0).getMetadata();
+
+        if ((matchMetadata instanceof ConfigurationGraphResolveMetadata) &&
+            ((ConfigurationGraphResolveMetadata) matchMetadata).isDeprecatedForConsumption()
+        ) {
+            DeprecationLogger.deprecateConfiguration(matchMetadata.getName())
+                .forConsumption()
+                .willBecomeAnErrorInGradle9()
+                .withUserManual("dependencies_should_no_longer_be_declared_using_the_compile_and_runtime_configurations")
+                .nagUser();
+        }
+        return new VariantSelectionResult(ImmutableList.of(match), variantAware);
     }
 
     private static ImmutableList<VariantGraphResolveState> filterVariantsByRequestedCapabilities(ComponentGraphResolveMetadata targetComponent, Collection<? extends Capability> explicitRequestedCapabilities, Collection<? extends VariantGraphResolveState> consumableVariants, boolean lenient) {
