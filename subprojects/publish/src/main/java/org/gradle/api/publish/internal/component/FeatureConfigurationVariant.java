@@ -19,17 +19,28 @@ import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.ConfigurationVariant;
 import org.gradle.api.internal.attributes.AttributeContainerInternal;
 
+import javax.annotation.Nullable;
+
 /**
  * A {@link ConfigurationSoftwareComponentVariant} which is aware of both Maven and Ivy publishing.
  */
-public class FeatureConfigurationVariant extends ConfigurationSoftwareComponentVariant implements MavenPublishingAwareVariant, IvyPublishingAwareVariant {
+public class FeatureConfigurationVariant extends ConfigurationSoftwareComponentVariant implements MavenPublishingAwareVariant, IvyPublishingAwareVariant, ResolutionBackedVariant {
     private final ScopeMapping scopeMapping;
     private final boolean optional;
+    DependencyMappingDetailsInternal dependencyMapping;
 
-    public FeatureConfigurationVariant(String name, Configuration configuration, ConfigurationVariant variant, String mavenScope, boolean optional) {
+    public FeatureConfigurationVariant(
+        String name,
+        Configuration configuration,
+        ConfigurationVariant variant,
+        String mavenScope,
+        boolean optional,
+        @Nullable DependencyMappingDetailsInternal dependencyMapping
+    ) {
         super(name, ((AttributeContainerInternal)variant.getAttributes()).asImmutable(), variant.getArtifacts(), configuration);
         this.scopeMapping = ScopeMapping.of(mavenScope, optional);
         this.optional = optional;
+        this.dependencyMapping = dependencyMapping;
     }
 
     @Override
@@ -40,5 +51,20 @@ public class FeatureConfigurationVariant extends ConfigurationSoftwareComponentV
     @Override
     public boolean isOptional() {
         return optional;
+    }
+
+    @Override
+    public boolean getPublishResolvedCoordinates() {
+        return dependencyMapping != null && dependencyMapping.shouldPublishResolvedCoordinates();
+    }
+
+    @Override
+    public boolean getPublishResolvedVersions() {
+        return dependencyMapping != null && dependencyMapping.shouldPublishResolvedVersions();
+    }
+
+    @Nullable
+    public Configuration getResolutionConfiguration() {
+        return dependencyMapping != null ? dependencyMapping.getResolutionConfiguration() : null;
     }
 }

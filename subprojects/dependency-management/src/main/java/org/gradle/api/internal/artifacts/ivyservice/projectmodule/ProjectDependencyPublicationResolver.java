@@ -16,12 +16,35 @@
 
 package org.gradle.api.internal.artifacts.ivyservice.projectmodule;
 
+import org.gradle.api.artifacts.ProjectDependency;
+import org.gradle.api.internal.artifacts.dependencies.ProjectDependencyInternal;
 import org.gradle.util.Path;
 
+/**
+ * Given project coordinates, and optionally the name of a variant in that project,
+ * determine the coordinates which should be used in other published metadata to reference
+ * the project or its variant.
+ *
+ * TODO: Eventually, this data should be made available to dependency-management and
+ * exposed through a ResolutionResult.
+ */
 public interface ProjectDependencyPublicationResolver {
+
+    <T> T resolveComponent(Class<T> coordsType, Path identityPath);
+
     /**
      * Determines the coordinates of the given type that should be used to reference the
      * project identified by {@code identityPath}.
+     *
+     * <p>This behaves similarly to {@link #resolveComponent}, but emits a deprecation warning
+     * if providing a {@code resolveVariant} would have produced a different result.</p>
      */
-    <T> T resolve(Class<T> coordsType, Path identityPath);
+    <T> T resolveVariant(Class<T> coordsType, Path identityPath);
+
+    /**
+     * Determines the coordinates of the given type that should be used to reference the
+     * variant with name {@code resolvedVariant}, contained in the project identified
+     * by {@code identityPath}.
+     */
+    <T> T resolveVariant(Class<T> coordsType, Path identityPath, String resolvedVariant);
 }

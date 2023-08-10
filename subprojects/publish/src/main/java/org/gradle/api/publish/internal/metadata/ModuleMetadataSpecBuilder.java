@@ -325,7 +325,7 @@ class ModuleMetadataSpecBuilder {
     ) {
         String resolvedVersion = null;
         Path identityPath = ((ProjectDependencyInternal) projectDependency).getIdentityPath();
-        ModuleVersionIdentifier identifier = projectDependencyResolver.resolve(ModuleVersionIdentifier.class, identityPath);
+        ModuleVersionIdentifier identifier = projectDependencyResolver.resolveComponent(ModuleVersionIdentifier.class, identityPath);
         if (versionMappingStrategy != null) {
             ModuleVersionIdentifier resolved =
                 versionMappingStrategy.maybeResolveVersion(
@@ -406,7 +406,7 @@ class ModuleMetadataSpecBuilder {
             DefaultProjectDependencyConstraint dependency = (DefaultProjectDependencyConstraint) dependencyConstraint;
             ProjectDependency projectDependency = dependency.getProjectDependency();
             identityPath = ((ProjectDependencyInternal) projectDependency).getIdentityPath();
-            ModuleVersionIdentifier identifier = projectDependencyResolver.resolve(ModuleVersionIdentifier.class, identityPath);
+            ModuleVersionIdentifier identifier = projectDependencyResolver.resolveComponent(ModuleVersionIdentifier.class, identityPath);
             group = identifier.getGroup();
             module = identifier.getName();
             resolvedVersion = identifier.getVersion();

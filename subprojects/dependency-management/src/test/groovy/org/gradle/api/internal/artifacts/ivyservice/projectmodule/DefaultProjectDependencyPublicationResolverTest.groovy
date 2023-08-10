@@ -218,7 +218,7 @@ Found the following publications in <project>:
 
     private ModuleVersionIdentifier resolve(Class type) {
         def resolver = new DefaultProjectDependencyPublicationResolver(publicationRegistry, projectConfigurer, projects)
-        return resolver.resolve(type, project.identityPath)
+        return resolver.resolveVariant(type, project.identityPath)
     }
 
     private void dependentProjectHasPublications(ProjectComponentPublication... added) {

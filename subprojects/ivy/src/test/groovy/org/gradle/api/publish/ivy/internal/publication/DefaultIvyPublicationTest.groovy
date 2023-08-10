@@ -174,7 +174,7 @@ class DefaultIvyPublicationTest extends Specification {
         def exclude = Mock(ExcludeRule)
 
         and:
-        projectDependencyResolver.resolve(ModuleVersionIdentifier, projectDependency.identityPath) >> DefaultModuleVersionIdentifier.newId("pub-org", "pub-module", "pub-revision")
+        projectDependencyResolver.resolveVariant(ModuleVersionIdentifier, projectDependency.identityPath) >> DefaultModuleVersionIdentifier.newId("pub-org", "pub-module", "pub-revision")
         projectDependency.targetConfiguration >> "dep-configuration"
         projectDependency.excludeRules >> [exclude]
         projectDependency.attributes >> ImmutableAttributes.EMPTY

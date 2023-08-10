@@ -28,6 +28,7 @@ import org.gradle.api.internal.CollectionCallbackActionDecorator;
 import org.gradle.api.internal.CompositeDomainObjectSet;
 import org.gradle.api.internal.DocumentationRegistry;
 import org.gradle.api.internal.artifacts.DefaultModuleVersionIdentifier;
+import org.gradle.api.internal.artifacts.ImmutableModuleIdentifierFactory;
 import org.gradle.api.internal.artifacts.Module;
 import org.gradle.api.internal.artifacts.configurations.DependencyMetaDataProvider;
 import org.gradle.api.internal.artifacts.dsl.dependencies.PlatformSupport;
@@ -119,7 +120,8 @@ public abstract class DefaultMavenPublication implements MavenPublicationInterna
         VersionRangeMapper versionRangeMapper,
         DocumentationRegistry documentationRegistry,
         TaskDependencyFactory taskDependencyFactory,
-        ProviderFactory providerFactory
+        ProviderFactory providerFactory,
+        ImmutableModuleIdentifierFactory moduleIdentifierFactory
     ) {
         this.name = name;
         this.immutableAttributesFactory = immutableAttributesFactory;
@@ -131,7 +133,8 @@ public abstract class DefaultMavenPublication implements MavenPublicationInterna
             versionRangeMapper,
             documentationRegistry,
             projectDependencyResolver,
-            mavenArtifactParser
+            mavenArtifactParser,
+            moduleIdentifierFactory
         );
 
         this.componentArtifacts = objectFactory.setProperty(MavenArtifact.class);
@@ -147,7 +150,7 @@ public abstract class DefaultMavenPublication implements MavenPublicationInterna
         this.pom.getWriteGradleMetadataMarker().set(providerFactory.provider(this::writeGradleMetadataMarker));
         this.pom.getPackagingProperty().convention(providerFactory.provider(this::determinePackagingFromArtifacts));
         this.pom.getDependencies().set(getComponent().map(component -> {
-            MavenComponentParser.DependencyResult result = mavenComponentParser.parseDependencies(component, getCoordinates(), versionMappingStrategy);
+            MavenComponentParser.ParsedDependencyResult result = mavenComponentParser.parseDependencies(component, getCoordinates(), versionMappingStrategy);
             if (!silenceAllPublicationWarnings) {
                 result.getWarnings().complete(getDisplayName() + " pom metadata", silencedVariants);
             }

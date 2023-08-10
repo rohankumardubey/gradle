@@ -15,7 +15,6 @@
  */
 package org.gradle.api.publish.internal.component;
 
-import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang.StringUtils;
 import org.gradle.api.Action;
@@ -23,18 +22,22 @@ import org.gradle.api.InvalidUserCodeException;
 import org.gradle.api.InvalidUserDataException;
 import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.artifacts.ConfigurablePublishArtifact;
+import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.ConfigurationVariant;
 import org.gradle.api.artifacts.PublishArtifactSet;
 import org.gradle.api.attributes.AttributeContainer;
 import org.gradle.api.component.ConfigurationVariantDetails;
+import org.gradle.api.component.DependencyMappingDetails;
 import org.gradle.api.internal.artifacts.configurations.ConfigurationInternal;
 import org.gradle.api.internal.component.UsageContext;
 import org.gradle.internal.Actions;
 import org.gradle.internal.deprecation.DeprecationLogger;
 import org.gradle.internal.reflect.Instantiator;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
 
 public class ConfigurationVariantMapping {
     private final ConfigurationInternal outgoingConfiguration;
@@ -47,46 +50,63 @@ public class ConfigurationVariantMapping {
         this.instantiator = instantiator;
     }
 
-    private void assertNoDuplicateVariant(String name, Set<String> seen) {
-        if (!seen.add(name)) {
-            throw new InvalidUserDataException("Cannot add feature variant '" + name + "' as a variant with the same name is already registered");
-        }
-    }
-
     public void addAction(Action<? super ConfigurationVariantDetails> action) {
         this.action = Actions.composite(this.action, action);
     }
 
-    public void collectVariants(final ImmutableCollection.Builder<UsageContext> outgoing) {
+    public void visitVariants(Consumer<UsageContext> visitor) {
+        outgoingConfiguration.preventFromFurtherMutation();
+
         if (!outgoingConfiguration.isTransitive()) {
             DeprecationLogger.warnOfChangedBehaviour("Publication ignores 'transitive = false' at configuration level", "Consider using 'transitive = false' at the dependency level if you need this to be published.")
                 .withUserManual("publishing_ivy", "configurations_marked_as_non_transitive")
                 .nagUser();
         }
+
         Set<String> seen = Sets.newHashSet();
+
         ConfigurationVariant defaultConfigurationVariant = instantiator.newInstance(DefaultConfigurationVariant.class, outgoingConfiguration);
-        DefaultConfigurationVariantDetails details = instantiator.newInstance(DefaultConfigurationVariantDetails.class, defaultConfigurationVariant);
+        maybeVisitVariant(visitor, seen, defaultConfigurationVariant);
+
+        NamedDomainObjectContainer<ConfigurationVariant> subvariants = outgoingConfiguration.getOutgoing().getVariants();
+        for (ConfigurationVariant subvariant : subvariants) {
+            maybeVisitVariant(visitor, seen, subvariant);
+        }
+    }
+
+    private void maybeVisitVariant(
+        Consumer<UsageContext> visitor,
+        Set<String> seen,
+        ConfigurationVariant subvariant
+    ) {
+
+        DefaultConfigurationVariantDetails details = instantiator.newInstance(DefaultConfigurationVariantDetails.class, subvariant);
         action.execute(details);
+
+        if (!details.shouldPublish()) {
+            return;
+        }
+
         String outgoingConfigurationName = outgoingConfiguration.getName();
-        if (details.shouldPublish()) {
-            registerVariant(outgoing, seen, defaultConfigurationVariant, outgoingConfigurationName, details.getMavenScope(), details.isOptional());
+        String name = subvariant instanceof DefaultConfigurationVariant
+            ? outgoingConfigurationName
+            : outgoingConfigurationName + StringUtils.capitalize(subvariant.getName());
+
+        if (!seen.add(name)) {
+            throw new InvalidUserDataException("Cannot add feature variant '" + name + "' as a variant with the same name is already registered");
         }
-        NamedDomainObjectContainer<ConfigurationVariant> extraVariants = outgoingConfiguration.getOutgoing().getVariants();
-        for (ConfigurationVariant variant : extraVariants) {
-            details = new DefaultConfigurationVariantDetails(variant);
-            action.execute(details);
-            if (details.shouldPublish()) {
-                String name = outgoingConfigurationName + StringUtils.capitalize(variant.getName());
-                registerVariant(outgoing, seen, variant, name, details.getMavenScope(), details.isOptional());
-            }
-        }
+
+        visitor.accept(new FeatureConfigurationVariant(
+            name,
+            outgoingConfiguration,
+            subvariant,
+            details.getMavenScope(),
+            details.isOptional(),
+            details.dependencyMappingDetails
+        ));
     }
 
-    private void registerVariant(ImmutableCollection.Builder<UsageContext> outgoing, Set<String> seen, ConfigurationVariant variant, String name, String scope, boolean optional) {
-        assertNoDuplicateVariant(name, seen);
-        outgoing.add(new FeatureConfigurationVariant(name, outgoingConfiguration, variant, scope, optional));
-    }
-
+    // Cannot be private due to reflective instantiation
     static class DefaultConfigurationVariant implements ConfigurationVariant {
         private final ConfigurationInternal outgoingConfiguration;
 
@@ -126,16 +146,17 @@ public class ConfigurationVariantMapping {
 
         @Override
         public AttributeContainer getAttributes() {
-            outgoingConfiguration.preventFromFurtherMutation();
             return outgoingConfiguration.getAttributes();
         }
     }
 
+    // Cannot be private due to reflective instantiation
     static class DefaultConfigurationVariantDetails implements ConfigurationVariantDetails {
         private final ConfigurationVariant variant;
         private boolean skip = false;
         private String mavenScope = "compile";
         private boolean optional = false;
+        private DefaultDependencyMappingDetails dependencyMappingDetails;
 
         public DefaultConfigurationVariantDetails(ConfigurationVariant variant) {
             this.variant = variant;
@@ -161,6 +182,14 @@ public class ConfigurationVariantMapping {
             this.mavenScope = assertValidScope(scope);
         }
 
+        @Override
+        public void dependencyMapping(Action<? super DependencyMappingDetails> action) {
+            if (dependencyMappingDetails == null) {
+                dependencyMappingDetails = new DefaultDependencyMappingDetails();
+            }
+            action.execute(dependencyMappingDetails);
+        }
+
         private static String assertValidScope(String scope) {
             scope = scope.toLowerCase();
             if ("compile".equals(scope) || "runtime".equals(scope)) {
@@ -181,4 +210,43 @@ public class ConfigurationVariantMapping {
             return optional;
         }
     }
+
+    private static class DefaultDependencyMappingDetails implements DependencyMappingDetailsInternal {
+
+        private boolean publishResolvedCoordinates;
+        private boolean publishResolvedVersions;
+        private Configuration resolutionConfiguration;
+
+        @Override
+        public void publishResolvedCoordinates() {
+            this.publishResolvedCoordinates = true;
+        }
+
+        @Override
+        public void publishResolvedVersions() {
+            this.publishResolvedVersions = true;
+        }
+
+        @Override
+        public void fromResolutionOf(Configuration resolutionConfiguration) {
+            this.resolutionConfiguration = resolutionConfiguration;
+        }
+
+        @Override
+        public boolean shouldPublishResolvedCoordinates() {
+            return publishResolvedCoordinates;
+        }
+
+        @Override
+        public boolean shouldPublishResolvedVersions() {
+            return publishResolvedVersions;
+        }
+
+        @Nullable
+        @Override
+        public Configuration getResolutionConfiguration() {
+            return resolutionConfiguration;
+        }
+    }
+
 }

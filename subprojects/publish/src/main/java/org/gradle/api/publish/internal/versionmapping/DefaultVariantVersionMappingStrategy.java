@@ -37,7 +37,7 @@ import java.util.Set;
 public class DefaultVariantVersionMappingStrategy implements VariantVersionMappingStrategyInternal {
     private final ConfigurationContainer configurations;
     private final ProjectDependencyPublicationResolver projectResolver;
-    private boolean usePublishedVersions;
+    private boolean enabled;
     private Configuration targetConfiguration;
 
     public DefaultVariantVersionMappingStrategy(ConfigurationContainer configurations, ProjectDependencyPublicationResolver projectResolver) {
@@ -46,13 +46,24 @@ public class DefaultVariantVersionMappingStrategy implements VariantVersionMappi
     }
 
     @Override
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    @Nullable
+    @Override
+    public Configuration getResolutionConfiguration() {
+        return targetConfiguration;
+    }
+
+    @Override
     public void fromResolutionResult() {
-        usePublishedVersions = true;
+        enabled = true;
     }
 
     @Override
     public void fromResolutionOf(Configuration configuration) {
-        usePublishedVersions = true;
+        enabled = true;
         targetConfiguration = configuration;
     }
 
@@ -63,7 +74,7 @@ public class DefaultVariantVersionMappingStrategy implements VariantVersionMappi
 
     @Override
     public ModuleVersionIdentifier maybeResolveVersion(String group, String module, Path identityPath) {
-        if (!usePublishedVersions || targetConfiguration == null) {
+        if (!enabled || targetConfiguration == null) {
             return null;
         }
 
@@ -109,7 +120,7 @@ public class DefaultVariantVersionMappingStrategy implements VariantVersionMappi
         // Match found - need to make sure that if the selection is a project, we use its publication identity
         if (selected.getId() instanceof ProjectComponentIdentifier) {
             Path identityPath = ((ProjectComponentIdentifierInternal) selected.getId()).getIdentityPath();
-            return projectResolver.resolve(ModuleVersionIdentifier.class, identityPath);
+            return projectResolver.resolveVariant(ModuleVersionIdentifier.class, identityPath);
         }
         return selected.getModuleVersion();
     }

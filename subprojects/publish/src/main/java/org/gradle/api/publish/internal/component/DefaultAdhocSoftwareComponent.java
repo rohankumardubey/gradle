@@ -68,7 +68,7 @@ public class DefaultAdhocSoftwareComponent implements AdhocComponentWithVariants
         if (cachedVariants == null) {
             ImmutableSet.Builder<UsageContext> builder = new ImmutableSet.Builder<>();
             for (ConfigurationVariantMapping variant : variants.values()) {
-                variant.collectVariants(builder);
+                variant.visitVariants(builder::add);
             }
             cachedVariants = builder.build();
         }

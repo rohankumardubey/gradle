@@ -295,7 +295,7 @@ public class IvyComponentParser {
 
         private IvyDependency asProjectDependency(ProjectDependency dependency, String confMapping) {
             Path identityPath = ((ProjectDependencyInternal) dependency).getIdentityPath();
-            ModuleVersionIdentifier identifier = projectDependencyResolver.resolve(ModuleVersionIdentifier.class, identityPath);
+            ModuleVersionIdentifier identifier = projectDependencyResolver.resolveVariant(ModuleVersionIdentifier.class, identityPath);
             return new DefaultIvyDependency(
                 identifier.getGroup(),
                 identifier.getName(),
@@ -323,7 +323,7 @@ public class IvyComponentParser {
 
         @Nullable
         private ModuleVersionIdentifier resolveCoordinates(Path identityPath) {
-            ModuleVersionIdentifier identifier = projectDependencyResolver.resolve(ModuleVersionIdentifier.class, identityPath);
+            ModuleVersionIdentifier identifier = projectDependencyResolver.resolveVariant(ModuleVersionIdentifier.class, identityPath);
             return resolveCoordinates(identifier.getGroup(), identifier.getName(), identifier.getVersion(), identityPath);
         }
 
