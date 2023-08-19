@@ -209,7 +209,6 @@ public class DefaultArtifactDependencyResolver implements ArtifactDependencyReso
             attributeDesugaring,
             versionSelectorScheme,
             versionComparator.asVersionComparator(),
-            localResolveStateFactory,
             idGenerator,
             versionParser
         );
