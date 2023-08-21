@@ -318,11 +318,11 @@
          <artifact name="android-studio-2022.3.1.18.linux.tar.gz">
             <sha256 value="24215e1324a6ac911810b2cc1afb2d735cf745dfbc06918a42b8d6fbc6bf7433" origin="Verified" reason="Artifact is not signed"/>
          </artifact>
-         <artifact name="android-studio-2022.3.1.18.mac_arm.zip">
-            <sha256 value="ae39502b86dcb004b7732a6639edc97a4bd501400118e9d0f3441d5079903cac" origin="Verified" reason="Artifact is not signed"/>
-         </artifact>
          <artifact name="android-studio-2022.3.1.18.mac.zip">
             <sha256 value="f6c06282dca0ca9eefe82752c1703f15394aa0fd659a845b75e47a673fbf082f" origin="Verified" reason="Artifact is not signed"/>
+         </artifact>
+         <artifact name="android-studio-2022.3.1.18.mac_arm.zip">
+            <sha256 value="ae39502b86dcb004b7732a6639edc97a4bd501400118e9d0f3441d5079903cac" origin="Verified" reason="Artifact is not signed"/>
          </artifact>
          <artifact name="android-studio-2022.3.1.18.windows.zip">
             <sha256 value="ce23ee1647d25f4567895b7ab29aaa844ef02d0aecd218ec775f62be564189b3" origin="Verified" reason="Artifact is not signed"/>
@@ -1052,16 +1052,6 @@
       <component group="org.apache.commons" name="commons-math3" version="3.6.1">
          <artifact name="commons-math3-3.6.1.jar">
             <pgp value="41a1a08c62fca78b79d3081164a16faaec16a4be"/>
-         </artifact>
-      </component>
-      <component group="org.apache.ivy" name="ivy" version="2.3.0">
-         <artifact name="ivy-2.3.0.jar">
-            <pgp value="9c60c6b3a5a9df8fedd299d65be0ba8cb80602ae"/>
-         </artifact>
-      </component>
-      <component group="org.apache.ivy" name="ivy" version="2.5.0">
-         <artifact name="ivy-2.5.0.jar">
-            <pgp value="8da70c00df7af1b0d2f9dc74ddbcc1270a29d081"/>
          </artifact>
       </component>
       <component group="org.apache.maven" name="maven-model" version="3.0.4">
